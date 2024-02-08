@@ -19,16 +19,16 @@ mod actions {
     // import models
     use emojiman::models::{
         GAME_DATA_KEY, GameData, Direction, Vec2, Position, PlayerAtPosition, RPSType, Energy,
-        PlayerID, PlayerAddress
+        PlayerID, PlayerAddress, Score, ClickPower, UpgradeItem, Upgrade
     };
 
     // import utils
-    use emojiman::utils::next_position;
+    use emojiman::utils::{next_position, get_upgrade_from_catalogue};
 
     // import config
     use emojiman::config::{
         INITIAL_ENERGY, RENEWED_ENERGY, MOVE_ENERGY_COST, X_RANGE, Y_RANGE, ORIGIN_OFFSET,
-        MAP_AMPLITUDE
+        MAP_AMPLITUDE, INITIAL_CLICK_POWER
     };
 
     // import integer
@@ -47,7 +47,7 @@ mod actions {
     #[external(v0)]
     impl ActionsImpl of IActions<ContractState> {
         // Spawns the player on to the map
-        fn spawn(self: @ContractState, rps: u8) {
+        fn spawn(self: @ContractState) {
             // world dispatcher
             let world = self.world_dispatcher.read();
 
@@ -63,9 +63,6 @@ mod actions {
             // NOTE: save game_data model with the set! macro
             set!(world, (game_data));
 
-            // assert rps type
-            assert(rps == 'r' || rps == 'p' || rps == 's', 'only r, p or s type allowed');
-
             // get player id 
             let mut player_id = get!(world, player, (PlayerID)).id;
 
@@ -73,73 +70,67 @@ mod actions {
             if player_id == 0 {
                 // Player not already spawned, prepare ID to assign
                 player_id = assign_player_id(world, game_data.number_of_players, player);
-            } else {
-                // Player already exists, clear old position for new spawn
-                let pos = get!(world, player_id, (Position));
-                clear_player_at_position(world, pos.x, pos.y);
             }
 
-            // set player type
-            set!(world, (RPSType { id: player_id, rps }));
+            // initialize player score to 0
+            modify_score(world, player_id, 0);
 
-            // spawn on random position
-            let (x, y) = spawn_coords(world, player.into(), player_id.into());
-
-            // set player position
-            player_position_and_energy(world, player_id, x, y, INITIAL_ENERGY);
+            // set initial click power for player
+            modify_click_power(world, player_id, INITIAL_CLICK_POWER);
         }
 
-        // Queues move for player to be processed later
-        fn move(self: @ContractState, dir: Direction) {
+        // Click the Kitty
+        fn click_kitty(self: @ContractState) {
+            // world dispatcher 
+            let world = self.world_dispatcher.read();
+
+            // player player address 
+            let player = get_caller_address();
+
+            // player id 
+            let player_id = get!(world, player, (PlayerID)).id;
+
+            // get ClickPower 
+            let click_power = get!(world, player_id, (ClickPower)).value;
+
+            // get Score 
+            let current_score = get!(world, player_id, (Score)).value;
+
+            // set new score 
+            let new_score = current_score + click_power;
+            modify_score(world, player_id, new_score);
+        }
+
+        fn buy_upgrade(self: @ContractState, selected_upgrade: UpgradeItem) {
             // world dispatcher
             let world = self.world_dispatcher.read();
 
             // player address
             let player = get_caller_address();
 
+            // get upgrade from catalogue
+            let upgrade = get_upgrade_from_catalogue(selected_upgrade);
+
             // player id
-            let id = get!(world, player, (PlayerID)).id;
+            let player_id = get!(world, player, (PlayerID)).id;
 
-            // player position and energy
-            let (pos, energy) = get!(world, id, (Position, Energy));
+            // current ClickPower
+            let click_power = get!(world, player_id, (ClickPower)).value;
 
-            // Clear old position
-            clear_player_at_position(world, pos.x, pos.y);
+            // increase ClickPower with upgrade
+            let new_click_power = click_power + upgrade.cp_increase;
 
-            // Get new position
-            let Position{id, x, y } = next_position(pos, dir);
+            // set new ClickPower
+            modify_click_power(world, player_id, new_click_power);
 
-            // Get max x and y
-            let max_x: felt252 = ORIGIN_OFFSET.into() + X_RANGE.into();
-            let max_y: felt252 = ORIGIN_OFFSET.into() + Y_RANGE.into();
+            // current Score
+            let score = get!(world, player_id, (Score)).value;
 
-            // assert max x and y
-            assert(
-                x <= max_x.try_into().unwrap() && y <= max_y.try_into().unwrap(), 'Out of bounds'
-            );
+            // subtract upgrade cost from score 
+            let new_score = score - upgrade.cost;
 
-            // resolve encounter
-            let adversary = player_at_position(world, x, y);
-
-            let tile = tile_at_position(x - ORIGIN_OFFSET.into(), y - ORIGIN_OFFSET.into());
-            let mut move_energy_cost = MOVE_ENERGY_COST;
-            if tile == 3 {
-                // Use more energy to go through ocean tiles
-                move_energy_cost = MOVE_ENERGY_COST * 3;
-            }
-
-            // assert energy
-            assert(energy.amt >= move_energy_cost, 'Not enough energy');
-
-            if 0 == adversary {
-                // Empty cell, move
-                player_position_and_energy(world, id, x, y, energy.amt - move_energy_cost);
-            } else {
-                if encounter(world, id, adversary) {
-                    // Move the player
-                    player_position_and_energy(world, id, x, y, energy.amt + RENEWED_ENERGY);
-                }
-            }
+            // set new score 
+            modify_score(world, player_id, new_score);
         }
 
         // ----- ADMIN FUNCTIONS -----
@@ -184,6 +175,16 @@ mod actions {
         let id = num_players;
         set!(world, (PlayerID { player, id }, PlayerAddress { player, id }));
         id
+    }
+
+    // @dev: Modify player score
+    fn modify_score(world: IWorldDispatcher, player_id: u8, value: u256) {
+        set!(world, (Score { player_id, value}));
+    }
+
+    // @dev: Set ClickPower for player
+    fn modify_click_power(world: IWorldDispatcher, player_id: u8, value: u256) {
+        set!(world, (ClickPower { player_id , value}));
     }
 
     // @dev: Sets no player at position

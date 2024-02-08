@@ -1,6 +1,38 @@
 use starknet::ContractAddress;
 use debug::PrintTrait;
 
+// struct for player score
+#[derive(Model, Copy, Drop, Serde)]
+struct Score {
+    #[key]
+    player_id: u8,
+    value: u256
+}
+
+// struct for amount of points player gets per click
+#[derive(Model, Copy, Drop, Serde)]
+struct ClickPower {
+    #[key]
+    player_id: u8,
+    value: u256
+}
+
+// Declaration of an enum named 'UpgradeItem' with two upgrade variants
+#[derive(Serde, Copy, Drop, Introspect)]
+enum UpgradeItem {
+    GoldenPaw,
+    DiamondPaw,
+}
+
+// struct for Upgrade details
+#[derive(Model, Copy, Drop, Serde)]
+struct Upgrade {
+    #[key]
+    name: felt252,
+    cp_increase: u256,
+    cost: u256
+}
+
 // Declaration of an enum named 'Direction' with five variants
 #[derive(Serde, Copy, Drop, Introspect)]
 enum Direction {
