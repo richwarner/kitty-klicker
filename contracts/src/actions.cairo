@@ -17,19 +17,13 @@ mod actions {
     use emojiman::interface::IActions;
 
     // import models
-    use emojiman::models::{
-        GAME_DATA_KEY, GameData, Direction, Vec2, Position, PlayerAtPosition, RPSType, Energy,
-        PlayerID, PlayerAddress, Score, ClickPower, UpgradeItem, Upgrade
-    };
+    use emojiman::models::{GAME_DATA_KEY, GameData, PlayerID, PlayerAddress, Score, ClickPower};
 
     // import utils
-    use emojiman::utils::{next_position, get_upgrade_from_catalogue};
+    use emojiman::utils::{UpgradeItem, Upgrade, get_upgrade_from_catalogue};
 
     // import config
-    use emojiman::config::{
-        INITIAL_ENERGY, RENEWED_ENERGY, MOVE_ENERGY_COST, X_RANGE, Y_RANGE, ORIGIN_OFFSET,
-        MAP_AMPLITUDE, INITIAL_CLICK_POWER
-    };
+    use emojiman::config::{INITIAL_CLICK_POWER};
 
     // import integer
     use integer::{u128s_from_felt252, U128sFromFelt252Result, u128_safe_divmod};
@@ -72,15 +66,15 @@ mod actions {
                 player_id = assign_player_id(world, game_data.number_of_players, player);
             }
 
-            // initialize player score to 0
-            modify_score(world, player_id, 0);
+            // For testing purposes, initialize player score to 50. In the game it will be 0
+            modify_score(world, player_id, 50);
 
             // set initial click power for player
             modify_click_power(world, player_id, INITIAL_CLICK_POWER);
         }
 
         // Click the Kitty
-        fn click_kitty(self: @ContractState) {
+        fn click_kitty(self: @ContractState, target_id: u8) {
             // world dispatcher 
             let world = self.world_dispatcher.read();
 
@@ -93,14 +87,29 @@ mod actions {
             // get ClickPower 
             let click_power = get!(world, player_id, (ClickPower)).value;
 
-            // get Score 
-            let current_score = get!(world, player_id, (Score)).value;
+            // determine whether player click own Kitty or opponent
+            if player_id == target_id {
+                // get Score (self)
+                let current_score = get!(world, player_id, (Score)).value;
 
-            // set new score 
-            let new_score = current_score + click_power;
-            modify_score(world, player_id, new_score);
+                // set new score (self)
+                let new_score = current_score + click_power;
+                modify_score(world, player_id, new_score);
+            } else {
+                // get Score (opponent)
+                let current_score = get!(world, target_id, (Score)).value;
+
+                // set new score (opponent)
+                let mut new_score = 0;
+
+                if current_score > click_power {
+                    new_score = current_score - click_power;
+                }
+                modify_score(world, target_id, new_score);
+            }
         }
 
+        // Buy an upgrade that modifies your ClickPower
         fn buy_upgrade(self: @ContractState, selected_upgrade: UpgradeItem) {
             // world dispatcher
             let world = self.world_dispatcher.read();
@@ -148,16 +157,6 @@ mod actions {
             let total_players = game_data.number_of_players;
             game_data.number_of_players = 0;
             set!(world, (game_data));
-
-            // Kill off all players
-            let mut i = 1;
-            loop {
-                if i > total_players {
-                    break;
-                }
-                player_dead(world, i);
-                i += 1;
-            };
         }
     }
 
@@ -179,137 +178,11 @@ mod actions {
 
     // @dev: Modify player score
     fn modify_score(world: IWorldDispatcher, player_id: u8, value: u256) {
-        set!(world, (Score { player_id, value}));
+        set!(world, (Score { player_id, value }));
     }
 
     // @dev: Set ClickPower for player
     fn modify_click_power(world: IWorldDispatcher, player_id: u8, value: u256) {
-        set!(world, (ClickPower { player_id , value}));
-    }
-
-    // @dev: Sets no player at position
-    fn clear_player_at_position(world: IWorldDispatcher, x: u8, y: u8) {
-        set!(world, (PlayerAtPosition { x, y, id: 0 }));
-    }
-
-    // @dev: Returns player id at position
-    fn player_at_position(world: IWorldDispatcher, x: u8, y: u8) -> u8 {
-        get!(world, (x, y), (PlayerAtPosition)).id
-    }
-
-    // @dev: Sets player position and energy
-    fn player_position_and_energy(world: IWorldDispatcher, id: u8, x: u8, y: u8, amt: u8) {
-        set!(world, (PlayerAtPosition { x, y, id }, Position { x, y, id }, Energy { id, amt },));
-    }
-
-    // @dev: Kills player
-    fn player_dead(world: IWorldDispatcher, id: u8) {
-        let pos = get!(world, id, (Position));
-        let empty_player = starknet::contract_address_const::<0>();
-
-        let id_felt: felt252 = id.into();
-        let entity_keys = array![id_felt].span();
-        let player = get!(world, id, (PlayerAddress)).player;
-        let player_felt: felt252 = player.into();
-        // Remove player address and ID mappings
-
-        let mut layout = array![];
-
-        world.delete_entity('PlayerID', array![player_felt].span(), layout.span());
-        world.delete_entity('PlayerAddress', entity_keys, layout.span());
-
-        set!(world, (PlayerID { player, id: 0 }));
-        set!(world, (Position { id, x: 0, y: 0 }, RPSType { id, rps: 0 }));
-
-        // Remove player components
-        world.delete_entity('RPSType', entity_keys, layout.span());
-        world.delete_entity('Position', entity_keys, layout.span());
-        world.delete_entity('Energy', entity_keys, layout.span());
-    }
-
-    // @dev: Handles player encounters
-    // if the player dies returns false
-    // if the player kills the other player returns true
-    fn encounter(world: IWorldDispatcher, player: u8, adversary: u8) -> bool {
-        let ply_type = get!(world, player, (RPSType)).rps;
-        let adv_type = get!(world, adversary, (RPSType)).rps;
-        if encounter_win(ply_type, adv_type) {
-            // adversary dies
-            player_dead(world, adversary);
-            true
-        } else {
-            // player dies
-            player_dead(world, player);
-            false
-        }
-    }
-
-    // @dev: Returns tile id at position
-    fn tile_at_position(x: u8, y: u8) -> u8 {
-        let vec = Vec3Trait::new(
-            FixedTrait::from_felt(x.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into()),
-            FixedTrait::from_felt(0),
-            FixedTrait::from_felt(y.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into())
-        );
-
-        // compute simplex noise
-        let simplex_value = simplex3::noise(vec);
-
-        // compute the value between -1 and 1 to a value between 0 and 1
-        let fixed_value = (simplex_value + FixedTrait::from_unscaled_felt(1))
-            / FixedTrait::from_unscaled_felt(2);
-
-        // make it an integer between 0 and 100
-        let value: u8 = FixedTrait::floor(fixed_value * FixedTrait::from_unscaled_felt(100))
-            .try_into()
-            .unwrap();
-
-        if (value > 70) {
-            return 3; // Sea
-        } else if (value > 60) {
-            return 2; // Desert
-        } else if (value > 53) {
-            return 1; // Forest
-        } else {
-            return 0; // Plain
-        }
-    }
-
-    // @dev: Returns true if player wins
-    fn encounter_win(ply_type: u8, adv_type: u8) -> bool {
-        assert(adv_type != ply_type, 'occupied by same type');
-        if (ply_type == 'r' && adv_type == 's')
-            || (ply_type == 'p' && adv_type == 'r')
-            || (ply_type == 's' && adv_type == 'p') {
-            return true;
-        }
-        false
-    }
-
-    // @dev: Returns random spawn coordinates
-    fn spawn_coords(world: IWorldDispatcher, player: felt252, mut salt: felt252) -> (u8, u8) {
-        let mut x = 10;
-        let mut y = 10;
-        loop {
-            let hash = pedersen::pedersen(player, salt);
-            let rnd_seed = match u128s_from_felt252(hash) {
-                U128sFromFelt252Result::Narrow(low) => low,
-                U128sFromFelt252Result::Wide((high, low)) => low,
-            };
-            let (rnd_seed, x_) = u128_safe_divmod(rnd_seed, X_RANGE.try_into().unwrap());
-            let (rnd_seed, y_) = u128_safe_divmod(rnd_seed, Y_RANGE.try_into().unwrap());
-            let x_: felt252 = x_.into();
-            let y_: felt252 = y_.into();
-
-            x = ORIGIN_OFFSET + x_.try_into().unwrap();
-            y = ORIGIN_OFFSET + y_.try_into().unwrap();
-            let occupied = player_at_position(world, x, y);
-            if occupied == 0 {
-                break;
-            } else {
-                salt += 1; // Try new salt
-            }
-        };
-        (x, y)
+        set!(world, (ClickPower { player_id, value }));
     }
 }
