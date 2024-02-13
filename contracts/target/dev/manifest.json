@@ -949,7 +949,7 @@
     {
       "name": "emojiman::actions::actions",
       "address": "0x2e30a7d7855decf40101136079f3bd9f86d97b5cad229ce8e6b2ce7efe6e624",
-      "class_hash": "0x13219109cf90d5cdc6ce78f5d1aa54c97358c61e2dfd1f1b05a9940ee92620f",
+      "class_hash": "0x73b0d9bfc7410a7b10ca036d2f9c7b0803baf2040760c2f6176433699f205b1",
       "abi": [
         {
           "type": "impl",
@@ -990,26 +990,14 @@
         },
         {
           "type": "enum",
-          "name": "emojiman::models::Direction",
+          "name": "emojiman::utils::UpgradeItem",
           "variants": [
             {
-              "name": "None",
+              "name": "GoldenPaw",
               "type": "()"
             },
             {
-              "name": "Left",
-              "type": "()"
-            },
-            {
-              "name": "Right",
-              "type": "()"
-            },
-            {
-              "name": "Up",
-              "type": "()"
-            },
-            {
-              "name": "Down",
+              "name": "DiamondPaw",
               "type": "()"
             }
           ]
@@ -1021,9 +1009,16 @@
             {
               "type": "function",
               "name": "spawn",
+              "inputs": [],
+              "outputs": [],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "click_kitty",
               "inputs": [
                 {
-                  "name": "rps",
+                  "name": "target_id",
                   "type": "core::integer::u8"
                 }
               ],
@@ -1032,11 +1027,11 @@
             },
             {
               "type": "function",
-              "name": "move",
+              "name": "buy_upgrade",
               "inputs": [
                 {
-                  "name": "dir",
-                  "type": "emojiman::models::Direction"
+                  "name": "selected_upgrade",
+                  "type": "emojiman::utils::UpgradeItem"
                 }
               ],
               "outputs": [],
@@ -1129,20 +1124,20 @@
   ],
   "models": [
     {
-      "name": "emojiman::models::energy",
+      "name": "emojiman::models::click_power",
       "members": [
         {
-          "name": "id",
+          "name": "player_id",
           "type": "u8",
           "key": true
         },
         {
-          "name": "amt",
-          "type": "u8",
+          "name": "value",
+          "type": "u256",
           "key": false
         }
       ],
-      "class_hash": "0x458e972c72ec0715d985c3f09356807bc48edde2715e9bc372a9f31c53fae26",
+      "class_hash": "0xb7de83497a92b3911dee40773dc312232501446c809f8c7b843ba155cd991c",
       "abi": [
         {
           "type": "function",
@@ -1299,7 +1294,7 @@
         },
         {
           "type": "event",
-          "name": "emojiman::models::energy::Event",
+          "name": "emojiman::models::click_power::Event",
           "kind": "enum",
           "variants": []
         }
@@ -1665,188 +1660,6 @@
       ]
     },
     {
-      "name": "emojiman::models::player_at_position",
-      "members": [
-        {
-          "name": "x",
-          "type": "u8",
-          "key": true
-        },
-        {
-          "name": "y",
-          "type": "u8",
-          "key": true
-        },
-        {
-          "name": "id",
-          "type": "u8",
-          "key": false
-        }
-      ],
-      "class_hash": "0x4ff859e46583525e2d3af30860b60c1bc9f644960148b7f3872e4a3e85806e3",
-      "abi": [
-        {
-          "type": "function",
-          "name": "name",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "core::felt252"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "function",
-          "name": "unpacked_size",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "core::integer::u32"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "function",
-          "name": "packed_size",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "core::integer::u32"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "struct",
-          "name": "core::array::Span::<core::integer::u8>",
-          "members": [
-            {
-              "name": "snapshot",
-              "type": "@core::array::Array::<core::integer::u8>"
-            }
-          ]
-        },
-        {
-          "type": "function",
-          "name": "layout",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "core::array::Span::<core::integer::u8>"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "struct",
-          "name": "core::array::Span::<core::felt252>",
-          "members": [
-            {
-              "name": "snapshot",
-              "type": "@core::array::Array::<core::felt252>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "core::array::Span::<core::array::Span::<core::felt252>>",
-          "members": [
-            {
-              "name": "snapshot",
-              "type": "@core::array::Array::<core::array::Span::<core::felt252>>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "dojo::database::introspect::Struct",
-          "members": [
-            {
-              "name": "name",
-              "type": "core::felt252"
-            },
-            {
-              "name": "attrs",
-              "type": "core::array::Span::<core::felt252>"
-            },
-            {
-              "name": "children",
-              "type": "core::array::Span::<core::array::Span::<core::felt252>>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "core::array::Span::<(core::felt252, core::array::Span::<core::felt252>)>",
-          "members": [
-            {
-              "name": "snapshot",
-              "type": "@core::array::Array::<(core::felt252, core::array::Span::<core::felt252>)>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "dojo::database::introspect::Enum",
-          "members": [
-            {
-              "name": "name",
-              "type": "core::felt252"
-            },
-            {
-              "name": "attrs",
-              "type": "core::array::Span::<core::felt252>"
-            },
-            {
-              "name": "children",
-              "type": "core::array::Span::<(core::felt252, core::array::Span::<core::felt252>)>"
-            }
-          ]
-        },
-        {
-          "type": "enum",
-          "name": "dojo::database::introspect::Ty",
-          "variants": [
-            {
-              "name": "Primitive",
-              "type": "core::felt252"
-            },
-            {
-              "name": "Struct",
-              "type": "dojo::database::introspect::Struct"
-            },
-            {
-              "name": "Enum",
-              "type": "dojo::database::introspect::Enum"
-            },
-            {
-              "name": "Tuple",
-              "type": "core::array::Span::<core::array::Span::<core::felt252>>"
-            }
-          ]
-        },
-        {
-          "type": "function",
-          "name": "schema",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "dojo::database::introspect::Ty"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "event",
-          "name": "emojiman::models::player_at_position::Event",
-          "kind": "enum",
-          "variants": []
-        }
-      ]
-    },
-    {
       "name": "emojiman::models::player_id",
       "members": [
         {
@@ -2024,25 +1837,20 @@
       ]
     },
     {
-      "name": "emojiman::models::position",
+      "name": "emojiman::models::score",
       "members": [
         {
-          "name": "id",
+          "name": "player_id",
           "type": "u8",
           "key": true
         },
         {
-          "name": "x",
-          "type": "u8",
-          "key": false
-        },
-        {
-          "name": "y",
-          "type": "u8",
+          "name": "value",
+          "type": "u256",
           "key": false
         }
       ],
-      "class_hash": "0x753d4a9bc97c8da132b3374b5e7fc9bfbd5fb20ed17635eecae5e9beee37257",
+      "class_hash": "0xdc2d23fe46d9eaf9653ccb881c6df67ad1a572733c53c91335635bbd9f5de9",
       "abi": [
         {
           "type": "function",
@@ -2199,184 +2007,7 @@
         },
         {
           "type": "event",
-          "name": "emojiman::models::position::Event",
-          "kind": "enum",
-          "variants": []
-        }
-      ]
-    },
-    {
-      "name": "emojiman::models::rps_type",
-      "members": [
-        {
-          "name": "id",
-          "type": "u8",
-          "key": true
-        },
-        {
-          "name": "rps",
-          "type": "u8",
-          "key": false
-        }
-      ],
-      "class_hash": "0x69365c7ca4e9917ed945c7301ba168f0995c397b97238cee64df116a8026247",
-      "abi": [
-        {
-          "type": "function",
-          "name": "name",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "core::felt252"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "function",
-          "name": "unpacked_size",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "core::integer::u32"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "function",
-          "name": "packed_size",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "core::integer::u32"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "struct",
-          "name": "core::array::Span::<core::integer::u8>",
-          "members": [
-            {
-              "name": "snapshot",
-              "type": "@core::array::Array::<core::integer::u8>"
-            }
-          ]
-        },
-        {
-          "type": "function",
-          "name": "layout",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "core::array::Span::<core::integer::u8>"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "struct",
-          "name": "core::array::Span::<core::felt252>",
-          "members": [
-            {
-              "name": "snapshot",
-              "type": "@core::array::Array::<core::felt252>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "core::array::Span::<core::array::Span::<core::felt252>>",
-          "members": [
-            {
-              "name": "snapshot",
-              "type": "@core::array::Array::<core::array::Span::<core::felt252>>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "dojo::database::introspect::Struct",
-          "members": [
-            {
-              "name": "name",
-              "type": "core::felt252"
-            },
-            {
-              "name": "attrs",
-              "type": "core::array::Span::<core::felt252>"
-            },
-            {
-              "name": "children",
-              "type": "core::array::Span::<core::array::Span::<core::felt252>>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "core::array::Span::<(core::felt252, core::array::Span::<core::felt252>)>",
-          "members": [
-            {
-              "name": "snapshot",
-              "type": "@core::array::Array::<(core::felt252, core::array::Span::<core::felt252>)>"
-            }
-          ]
-        },
-        {
-          "type": "struct",
-          "name": "dojo::database::introspect::Enum",
-          "members": [
-            {
-              "name": "name",
-              "type": "core::felt252"
-            },
-            {
-              "name": "attrs",
-              "type": "core::array::Span::<core::felt252>"
-            },
-            {
-              "name": "children",
-              "type": "core::array::Span::<(core::felt252, core::array::Span::<core::felt252>)>"
-            }
-          ]
-        },
-        {
-          "type": "enum",
-          "name": "dojo::database::introspect::Ty",
-          "variants": [
-            {
-              "name": "Primitive",
-              "type": "core::felt252"
-            },
-            {
-              "name": "Struct",
-              "type": "dojo::database::introspect::Struct"
-            },
-            {
-              "name": "Enum",
-              "type": "dojo::database::introspect::Enum"
-            },
-            {
-              "name": "Tuple",
-              "type": "core::array::Span::<core::array::Span::<core::felt252>>"
-            }
-          ]
-        },
-        {
-          "type": "function",
-          "name": "schema",
-          "inputs": [],
-          "outputs": [
-            {
-              "type": "dojo::database::introspect::Ty"
-            }
-          ],
-          "state_mutability": "view"
-        },
-        {
-          "type": "event",
-          "name": "emojiman::models::rps_type::Event",
+          "name": "emojiman::models::score::Event",
           "kind": "enum",
           "variants": []
         }
