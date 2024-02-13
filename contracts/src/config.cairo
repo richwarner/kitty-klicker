@@ -2,6 +2,8 @@
 // Constants
 // ----------------------------------------------------------------------------
 
+const INITIAL_CLICK_POWER: u256 = 10;
+
 const INITIAL_ENERGY: u8 = 100;
 const RENEWED_ENERGY: u8 = 20;
 const MOVE_ENERGY_COST: u8 = 1;
