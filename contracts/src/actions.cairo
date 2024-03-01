@@ -14,7 +14,9 @@ mod actions {
     use emojiman::interface::IActions;
 
     // import models
-    use emojiman::models::{GAME_DATA_KEY, GameData, PlayerID, PlayerAddress, Score, ClickPower, Inventory};
+    use emojiman::models::{
+        GAME_DATA_KEY, GameData, PlayerID, PlayerAddress, Score, ClickPower, Inventory
+    };
 
     // import utils
     use emojiman::utils::{UpgradeItem, Upgrade, get_upgrade_from_catalogue};
@@ -140,7 +142,6 @@ mod actions {
 
             // modify inventory 
             modify_inventory(world, player_id, selected_upgrade);
-
         }
 
         // ----- ADMIN FUNCTIONS -----
@@ -187,6 +188,7 @@ mod actions {
         set!(world, (ClickPower { player_id, value }));
     }
 
+    // @dev: Modify Player Inventory
     fn modify_inventory(world: IWorldDispatcher, player_id: u8, selected_upgrade: UpgradeItem) {
         match selected_upgrade {
             UpgradeItem::GoldenPaw => {
