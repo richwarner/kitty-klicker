@@ -102,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    #[available_gas(30000000)]
+    #[available_gas(60000000)]
     fn click_test() {
         let (caller, world, actions_) = spawn_world();
 
@@ -123,6 +123,17 @@ mod tests {
         // Get player score after 2 clicks on self
         let score = get!(world, player_id, (Score)).value;
         assert(score == 70, 'Score should be 70');
+
+        // Spawn player 2, player 2 is caller
+        let caller_2 = starknet::contract_address_const::<0x22>();
+        starknet::testing::set_contract_address(caller_2);
+        actions_.spawn();
+
+        // Player 2 clicks on player 1
+        actions_.click_kitty(1);
+
+        let score = get!(world, 1, (Score)).value;
+        assert(score == 60, 'Score should be 60');
     }
 
     #[test]
