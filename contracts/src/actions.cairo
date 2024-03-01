@@ -9,15 +9,12 @@
 mod actions {
     use starknet::{ContractAddress, get_caller_address};
     use debug::PrintTrait;
-    use cubit::f128::procgen::simplex3;
-    use cubit::f128::types::fixed::FixedTrait;
-    use cubit::f128::types::vec3::Vec3Trait;
 
     // import actions
     use emojiman::interface::IActions;
 
     // import models
-    use emojiman::models::{GAME_DATA_KEY, GameData, PlayerID, PlayerAddress, Score, ClickPower};
+    use emojiman::models::{GAME_DATA_KEY, GameData, PlayerID, PlayerAddress, Score, ClickPower, Inventory};
 
     // import utils
     use emojiman::utils::{UpgradeItem, Upgrade, get_upgrade_from_catalogue};
@@ -140,6 +137,10 @@ mod actions {
 
             // set new score 
             modify_score(world, player_id, new_score);
+
+            // modify inventory 
+            modify_inventory(world, player_id, selected_upgrade);
+
         }
 
         // ----- ADMIN FUNCTIONS -----
@@ -184,5 +185,32 @@ mod actions {
     // @dev: Set ClickPower for player
     fn modify_click_power(world: IWorldDispatcher, player_id: u8, value: u256) {
         set!(world, (ClickPower { player_id, value }));
+    }
+
+    fn modify_inventory(world: IWorldDispatcher, player_id: u8, selected_upgrade: UpgradeItem) {
+        match selected_upgrade {
+            UpgradeItem::GoldenPaw => {
+                let inventory = get!(world, player_id, (Inventory));
+                set!(
+                    world,
+                    (Inventory {
+                        player_id,
+                        DiamondPaw: inventory.DiamondPaw,
+                        GoldenPaw: inventory.GoldenPaw + 1
+                    })
+                )
+            },
+            UpgradeItem::DiamondPaw => {
+                let inventory = get!(world, player_id, (Inventory));
+                set!(
+                    world,
+                    (Inventory {
+                        player_id,
+                        DiamondPaw: inventory.DiamondPaw + 1,
+                        GoldenPaw: inventory.GoldenPaw
+                    })
+                )
+            },
+        }
     }
 }

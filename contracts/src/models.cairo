@@ -1,6 +1,4 @@
 use starknet::ContractAddress;
-use debug::PrintTrait;
-use emojiman::utils::{UpgradeItem, Upgrade};
 
 // struct for player score
 #[derive(Model, Copy, Drop, Serde)]
@@ -16,6 +14,15 @@ struct ClickPower {
     #[key]
     player_id: u8,
     value: u256
+}
+
+// struct to keep track of bought upgrades per player
+#[derive(Model, Copy, Drop, Serde)]
+struct Inventory {
+    #[key]
+    player_id: u8,
+    DiamondPaw: u128,
+    GoldenPaw: u128
 }
 
 // Constant definition for a game data key. This allows us to fetch this model using the key.
